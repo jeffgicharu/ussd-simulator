@@ -1,0 +1,5 @@
+services:
+  ussd-simulator:
+    build: .
+    ports:
+      - "8181:8181"

@@ -1,0 +1,9 @@
+target/
+.git/
+.github/
+.idea/
+*.iml
+*.md
+LICENSE
+.dockerignore
+docker-compose.yml
