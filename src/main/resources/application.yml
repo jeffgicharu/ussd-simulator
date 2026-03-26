@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: ussd-simulator
+
+server:
+  port: 8181
+
+ussd:
+  service-code: "*384#"
+  session-timeout-seconds: 180
+  max-sessions: 10000
+
+  # Wallet API integration (optional)
+  wallet-api:
+    base-url: http://localhost:8080
+    enabled: false
