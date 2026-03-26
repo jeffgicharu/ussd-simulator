@@ -47,6 +47,14 @@ public class UssdSession {
         return currentScreenId;
     }
 
+    public long getSessionAgeSeconds() {
+        return java.time.Duration.between(createdAt, java.time.Instant.now()).getSeconds();
+    }
+
+    public boolean isNearTimeout(int timeoutSeconds) {
+        return getSessionAgeSeconds() > (timeoutSeconds * 0.8);
+    }
+
     public void putData(String key, String value) {
         data.put(key, value);
     }
