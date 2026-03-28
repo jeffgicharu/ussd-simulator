@@ -2,7 +2,7 @@
 
 When you dial `*334#` on your phone and navigate through menus to send money or buy airtime, there's a backend managing your session, tracking which screen you're on, and processing your input one digit at a time. This project is that backend.
 
-It simulates the full M-Pesa USSD experience — 24 menu screens across 6 flows (send money, withdraw, buy airtime, check balance, account management, loans). It's compatible with [Africa's Talking](https://africastalking.com/) USSD gateway format, so it can plug directly into a real telco callback. It also includes a browser-based phone simulator so you can test everything visually.
+It simulates the full M-Pesa USSD experience with 24 menu screens across 6 flows (send money, withdraw, buy airtime, check balance, account management, loans). It's compatible with [Africa's Talking](https://africastalking.com/) USSD gateway format, so it can plug directly into a real telco callback. It also includes a browser-based phone simulator so you can test everything visually.
 
 ## How USSD Works (and Why It's Different from REST)
 
@@ -10,16 +10,16 @@ USSD isn't like a normal API. There's no JSON, no stateless requests. The user d
 
 Sessions time out after 180 seconds. If the user takes too long, the carrier drops the connection. The backend has to handle all of this.
 
-This project uses a **screen-based state machine** — each screen in the menu tree is a self-contained component that knows how to display itself and process user input. The engine routes requests to the right screen based on session state.
+This project uses a **screen-based state machine**. Each screen in the menu tree is a self-contained component that knows how to display itself and process user input. The engine routes requests to the right screen based on session state.
 
 ## What You Can Do
 
-- **Send money** — enter phone number, amount, see the fee breakdown, confirm with PIN
-- **Withdraw cash** — enter agent number, amount, confirm with PIN
-- **Buy airtime** — for your own phone or another number
-- **Check balance** — PIN-protected
-- **My Account** — view phone number, change PIN, switch language, get mini/full statement
-- **Loans & Savings** — request loan, repay, check balance, savings account
+- **Send money**: enter phone number, amount, see the fee breakdown, confirm with PIN
+- **Withdraw cash**: enter agent number, amount, confirm with PIN
+- **Buy airtime**: for your own phone or another number
+- **Check balance**: PIN-protected
+- **My Account**: view phone number, change PIN, switch language, get mini/full statement
+- **Loans & Savings**: request loan, repay, check balance, savings account
 
 Fees follow M-Pesa's tiered structure (KES 0 for amounts under 100, up to KES 108 for larger transfers).
 
@@ -50,7 +50,7 @@ curl -X POST http://localhost:8181/ussd/api \
   -d '{"sessionId":"abc123","phoneNumber":"+254700000001","input":"4"}'
 ```
 
-You can also send the entire input chain at once — `text=4*1234` checks balance with PIN `1234` in a single request. The engine splits the chain and replays each input against the session.
+You can also send the entire input chain at once. `text=4*1234` checks balance with PIN `1234` in a single request. The engine splits the chain and replays each input against the session.
 
 ## Demo Accounts
 
@@ -84,11 +84,11 @@ public interface UssdScreen {
 }
 ```
 
-Screens are Spring `@Component`s — the engine auto-discovers all of them at startup. To add a new screen, you just create a class, implement the interface, and annotate it. No registration needed.
+Screens are Spring `@Component`s. The engine auto-discovers all of them at startup. To add a new screen, you just create a class, implement the interface, and annotate it. No registration needed.
 
 ## Built With
 
-Spring Boot 3.2, Java 17, vanilla HTML/CSS/JS for the phone simulator. No database needed — sessions and wallets are in-memory.
+Spring Boot 3.2, Java 17, vanilla HTML/CSS/JS for the phone simulator. Sessions and wallets are in-memory.
 
 ## Tests
 
