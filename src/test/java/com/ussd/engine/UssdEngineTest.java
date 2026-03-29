@@ -116,9 +116,9 @@ class UssdEngineTest {
     void myAccount_showPhoneNumber() {
         String sid = "test-account";
         engine.process(sid, "+254700000001", "*384#", "");
-        engine.process(sid, "+254700000001", "*384#", "5");
+        engine.process(sid, "+254700000001", "*384#", "6");
 
-        UssdResponse response = engine.process(sid, "+254700000001", "*384#", "5*1");
+        UssdResponse response = engine.process(sid, "+254700000001", "*384#", "6*1");
         assertFalse(response.isContinueSession());
         assertTrue(response.getMessage().contains("+254700000001"));
     }
@@ -147,9 +147,9 @@ class UssdEngineTest {
     void africasTalking_formatEND() {
         String sid = "test-at-end";
         engine.process(sid, "+254700000001", "*384#", "");
-        engine.process(sid, "+254700000001", "*384#", "5");
+        engine.process(sid, "+254700000001", "*384#", "6");
 
-        UssdResponse response = engine.process(sid, "+254700000001", "*384#", "5*1");
+        UssdResponse response = engine.process(sid, "+254700000001", "*384#", "6*1");
         String at = response.toAfricasTalking();
         assertTrue(at.startsWith("END "));
     }
