@@ -1,19 +1,27 @@
 package com.ussd.engine;
 
+import com.ussd.entity.SessionLog;
 import com.ussd.model.UssdSession;
+import com.ussd.repository.SessionLogRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 public class SessionManager {
+
+    @Autowired(required = false)
+    private SessionLogRepository sessionLogRepo;
 
     private final Map<String, UssdSession> sessions = new ConcurrentHashMap<>();
 
@@ -58,7 +66,30 @@ public class SessionManager {
         UssdSession session = sessions.remove(sessionId);
         if (session != null) {
             session.end();
+            persistSessionLog(session, "COMPLETED");
             log.info("Session ended: {}", sessionId);
+        }
+    }
+
+    private void persistSessionLog(UssdSession session, String outcome) {
+        if (sessionLogRepo == null) return;
+        try {
+            long duration = Duration.between(session.getCreatedAt(), Instant.now()).toMillis();
+            String path = session.getScreenHistory().stream().collect(Collectors.joining(" > "));
+
+            sessionLogRepo.save(SessionLog.builder()
+                    .sessionId(session.getSessionId())
+                    .phoneNumber(session.getPhoneNumber())
+                    .serviceCode(session.getServiceCode())
+                    .screenCount(session.getScreenHistory().size() + 1)
+                    .screenPath(path.length() > 500 ? path.substring(0, 500) : path)
+                    .lastScreen(session.getCurrentScreenId())
+                    .outcome(outcome)
+                    .durationMs(duration)
+                    .endedAt(LocalDateTime.now())
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to persist session log: {}", e.getMessage());
         }
     }
 
