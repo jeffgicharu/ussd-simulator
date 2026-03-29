@@ -3,6 +3,7 @@ package com.ussd.engine;
 import com.ussd.model.UssdResponse;
 import com.ussd.model.UssdSession;
 import com.ussd.screen.UssdScreen;
+import com.ussd.service.WalletService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class UssdEngine {
 
     private final SessionManager sessionManager;
     private final List<UssdScreen> screenBeans;
+    private final WalletService walletService;
 
     private final Map<String, UssdScreen> screens = new HashMap<>();
 
@@ -55,11 +57,18 @@ public class UssdEngine {
         UssdSession session = sessionManager.getSession(sessionId);
 
         if (session == null) {
-            // New session — create and show main menu
             session = sessionManager.createSession(sessionId, phoneNumber, serviceCode);
 
+            // Redirect unregistered users to registration
+            if (!walletService.isRegistered(phoneNumber)) {
+                session.navigateTo("REGISTER_PIN");
+                if (inputs.length == 0) {
+                    return getScreen("REGISTER_PIN").render(session);
+                }
+                return processInputChain(session, inputs);
+            }
+
             if (inputs.length == 0) {
-                // Fresh dial — just show the main menu
                 return getScreen(session.getCurrentScreenId()).render(session);
             }
 
@@ -87,7 +96,12 @@ public class UssdEngine {
 
         if (session == null) {
             session = sessionManager.createSession(sessionId, phoneNumber, serviceCode);
-            if (input == null || input.isEmpty()) {
+            if (!walletService.isRegistered(phoneNumber)) {
+                session.navigateTo("REGISTER_PIN");
+                if (input == null || input.isEmpty()) {
+                    return getScreen("REGISTER_PIN").render(session);
+                }
+            } else if (input == null || input.isEmpty()) {
                 return getScreen(session.getCurrentScreenId()).render(session);
             }
         }

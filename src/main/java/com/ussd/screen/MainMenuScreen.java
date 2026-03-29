@@ -20,8 +20,9 @@ public class MainMenuScreen implements UssdScreen {
                 "2. Withdraw Cash\n" +
                 "3. Buy Airtime\n" +
                 "4. Check Balance\n" +
-                "5. My Account\n" +
-                "6. Loans & Savings"
+                "5. Deposit\n" +
+                "6. My Account\n" +
+                "7. Loans & Savings"
         );
     }
 
@@ -49,6 +50,10 @@ public class MainMenuScreen implements UssdScreen {
                 yield UssdResponse.con("Enter PIN to check balance:");
             }
             case "5" -> {
+                session.navigateTo("DEPOSIT_AMOUNT");
+                yield UssdResponse.con("Enter deposit amount (KES):");
+            }
+            case "6" -> {
                 session.navigateTo("MY_ACCOUNT");
                 yield UssdResponse.con(
                         "My Account\n" +
@@ -59,7 +64,7 @@ public class MainMenuScreen implements UssdScreen {
                         "5. Mini Statement"
                 );
             }
-            case "6" -> {
+            case "7" -> {
                 session.navigateTo("LOANS_MENU");
                 yield UssdResponse.con(
                         "Loans & Savings\n" +
@@ -75,8 +80,9 @@ public class MainMenuScreen implements UssdScreen {
                     "2. Withdraw Cash\n" +
                     "3. Buy Airtime\n" +
                     "4. Check Balance\n" +
-                    "5. My Account\n" +
-                    "6. Loans & Savings"
+                    "5. Deposit\n" +
+                    "6. My Account\n" +
+                    "7. Loans & Savings"
             );
         };
     }
