@@ -69,7 +69,11 @@ public class MyAccountScreen {
     }
 
     @Component
+    @RequiredArgsConstructor
     public static class ChangePinOldScreen implements UssdScreen {
+
+        private final WalletService walletService;
+
         @Override
         public String getId() { return "CHANGE_PIN_OLD"; }
 
@@ -80,10 +84,16 @@ public class MyAccountScreen {
 
         @Override
         public UssdResponse handleInput(UssdSession session, String input) {
-            if (!input.trim().matches("^[0-9]{4}$")) {
+            String pin = input.trim();
+            if (!pin.matches("^[0-9]{4}$")) {
                 return UssdResponse.con("Invalid PIN. Enter 4-digit PIN:");
             }
-            session.putData("old_pin", input.trim());
+            // Verify the current PIN through the same pipeline money
+            // operations use, so the lockout/cooldown policy applies here.
+            if (!walletService.validatePin(session.getPhoneNumber(), pin)) {
+                session.end();
+                return UssdResponse.end("Current PIN is incorrect.\nPIN change cancelled.");
+            }
             session.navigateTo("CHANGE_PIN_NEW");
             return UssdResponse.con("Enter new PIN:");
         }
@@ -111,7 +121,11 @@ public class MyAccountScreen {
     }
 
     @Component
+    @RequiredArgsConstructor
     public static class ChangePinConfirmScreen implements UssdScreen {
+
+        private final WalletService walletService;
+
         @Override
         public String getId() { return "CHANGE_PIN_CONFIRM"; }
 
@@ -127,6 +141,8 @@ public class MyAccountScreen {
                 session.end();
                 return UssdResponse.end("PINs do not match. PIN change cancelled.");
             }
+            // Persist the new PIN so subsequent operations require it.
+            walletService.changePin(session.getPhoneNumber(), newPin);
             session.end();
             return UssdResponse.end("PIN changed successfully.");
         }

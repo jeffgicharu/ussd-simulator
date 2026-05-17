@@ -253,6 +253,23 @@ public class WalletService {
         return "Registration successful!\nYour M-Wallet is now active.\nDial *384# to get started.";
     }
 
+    /**
+     * Persist a new PIN for an existing account. Caller is responsible for
+     * having verified the current PIN first (see ChangePinOldScreen).
+     */
+    public boolean changePin(String phone, String newPin) {
+        if (!pins.containsKey(phone)) {
+            return false;
+        }
+        pins.put(phone, newPin);
+        // A successful change clears any prior failed-attempt / lock state.
+        failedAttempts.remove(phone);
+        lockedUntil.remove(phone);
+        logTransaction(phone, "PIN_CHANGE", BigDecimal.ZERO, BigDecimal.ZERO,
+                null, "SUCCESS", getBalance(phone));
+        return true;
+    }
+
     // ─── DEPOSIT ────────────────────────────────────────────────────
 
     public String deposit(String phone, String amountStr, String pin) {
