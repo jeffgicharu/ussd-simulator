@@ -129,6 +129,51 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- PIT mutation testing. Focused on the service layer and the
+                 state-machine engine per TEST_STRATEGY.md — coverage tells
+                 us lines run, mutation tells us assertions actually detect
+                 wrong behaviour on the money/auth/session paths.
+                 Thresholds are an interim ratchet; TEST_STRATEGY.md targets
+                 >=70% mutation on state-machine and service classes. -->
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.18.2</version>
+                <configuration>
+                    <targetClasses>
+                        <param>com.ussd.service.*</param>
+                        <param>com.ussd.engine.*</param>
+                        <param>com.ussd.screen.*</param>
+                    </targetClasses>
+                    <targetTests>
+                        <param>com.ussd.*</param>
+                    </targetTests>
+                    <mutators>
+                        <mutator>STRONGER</mutator>
+                    </mutators>
+                    <!-- Interim ratchet = floor(measured - 2). Measured on
+                         the focused class set: PIT mutation score 51%
+                         (238/464), line coverage 64%. TEST_STRATEGY.md
+                         targets >=70% mutation on state-machine + service
+                         classes; raised as untested secondary screens gain
+                         flow coverage in later test-expansion work. -->
+                    <coverageThreshold>61</coverageThreshold>
+                    <mutationThreshold>49</mutationThreshold>
+                    <timestampedReports>false</timestampedReports>
+                    <outputFormats>
+                        <param>HTML</param>
+                        <param>XML</param>
+                    </outputFormats>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>1.2.2</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 </project>

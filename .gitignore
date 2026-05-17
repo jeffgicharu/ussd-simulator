@@ -1,4 +1,6 @@
 target/
+target/pit-reports/
+.stryker-tmp/
 .idea/
 *.iml
 .vscode/

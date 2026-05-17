@@ -1,0 +1,41 @@
+name: Mutation Tests
+
+# PIT mutation coverage takes ~19 minutes on the focused class set, so it
+# runs nightly (and on demand) rather than per-PR. The per-PR gate stays
+# fast with JaCoCo line/branch checks in ci.yml; this job is the deeper
+# assertion-strength signal and the configured PIT thresholds still fail
+# the run if the mutation score regresses.
+
+on:
+  schedule:
+    - cron: '30 2 * * *'   # 02:30 UTC nightly
+  workflow_dispatch:
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run PIT mutation coverage
+        run: mvn -B test-compile org.pitest:pitest-maven:mutationCoverage
+
+      - name: Upload PIT report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pit-mutation-report
+          path: |
+            target/pit-reports/**/*.html
+            target/pit-reports/**/*.css
+            target/pit-reports/mutations.xml
+          if-no-files-found: warn
