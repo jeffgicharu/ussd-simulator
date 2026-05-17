@@ -1,6 +1,9 @@
 target/
 target/pit-reports/
 .stryker-tmp/
+performance/results/
+__pycache__/
+*.pyc
 .idea/
 *.iml
 .vscode/

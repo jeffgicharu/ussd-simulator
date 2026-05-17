@@ -1,0 +1,21 @@
+# Performance-test target: the ussd-simulator built from source, run
+# production-like — prod Spring profile, port 8082, and the same JVM heap
+# tuning the live deployment uses (see ussd-deploy notes: 192m max heap,
+# SerialGC, capped metaspace). In-memory H2, demo accounts seeded in code.
+services:
+  ussd-perf:
+    build: .
+    container_name: ussd-perf
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: "8082"
+      # JVM picks JAVA_TOOL_OPTIONS up automatically (entrypoint is fixed).
+      JAVA_TOOL_OPTIONS: "-Xmx192m -Xms96m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/api/metrics"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s

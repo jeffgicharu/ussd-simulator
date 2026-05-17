@@ -1,0 +1,105 @@
+name: Performance
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * *'   # 04:00 UTC nightly — full suite
+  workflow_dispatch:
+
+jobs:
+  # Fast per-PR gate: build the production-like target, 1-user smoke,
+  # fail the PR if the SLO gate (p95 < 200 ms, errors < 0.1%) trips.
+  smoke:
+    name: Performance Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Locust
+        run: pip install locust
+
+      - name: Start production-like target
+        run: |
+          docker compose -f docker-compose.perf.yml up -d --build
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8082/api/metrics >/dev/null 2>&1 && break
+            sleep 3
+          done
+          performance/seed-perf-data.sh http://localhost:8082
+
+      - name: Smoke (SLO-gated)
+        run: |
+          locust -f performance/locust/locustfile_smoke.py --headless \
+            -u 1 -r 1 -t 30s --host http://localhost:8082 \
+            --html performance/results/smoke.html
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-smoke-report
+          path: performance/results/*.html
+          if-no-files-found: warn
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.perf.yml down -v || true
+
+  # Nightly only: the heavy scenarios. Not a PR gate.
+  full-suite:
+    name: Performance Full Suite
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Locust
+        run: pip install locust
+
+      - name: Start production-like target
+        run: |
+          docker compose -f docker-compose.perf.yml up -d --build
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8082/api/metrics >/dev/null 2>&1 && break
+            sleep 3
+          done
+          performance/seed-perf-data.sh http://localhost:8082
+
+      - name: Load
+        run: locust -f performance/locust/locustfile_load.py --headless -u 100 -r 2 -t 6m --host http://localhost:8082 --html performance/results/load.html
+
+      - name: Spike
+        run: locust -f performance/locust/locustfile_spike.py --headless --host http://localhost:8082 --html performance/results/spike.html
+
+      - name: Workflow
+        run: locust -f performance/locust/locustfile_workflow.py --headless -u 50 -r 5 -t 5m --host http://localhost:8082 --html performance/results/workflow.html
+
+      - name: Stress (report-only SLO)
+        env:
+          SLO_DISABLED: "1"
+        run: locust -f performance/locust/locustfile_stress.py --headless -u 1000 -r 3.33 -t 10m --host http://localhost:8082 --html performance/results/stress.html
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-full-suite-reports
+          path: performance/results/*.html
+          if-no-files-found: warn
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.perf.yml down -v || true
