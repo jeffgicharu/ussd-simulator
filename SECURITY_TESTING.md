@@ -49,6 +49,21 @@ verified.
 | ZAP baseline (passive) | ❌ | Sundays 04:30 | dispatch (baseline) |
 | ZAP active | ❌ never | ❌ never | dispatch (`scan_type=api`) only |
 
+## Required manual setup (token-gated tools)
+
+Two scanners need a repository secret and **gracefully skip** (notice +
+exit 0, never a false pass, never a PR block) until it is added:
+
+| Secret | Tool | Why | Where to get it |
+|---|---|---|---|
+| `NVD_API_KEY` | OWASP Dependency Check | The NVD rejects keyless pulls (HTTP 403); without it the data cannot download | https://nvd.nist.gov/developers/request-an-api-key (free) |
+| `SNYK_TOKEN` | Snyk | Snyk API auth | https://app.snyk.io/account |
+
+Add via *Settings → Secrets and variables → Actions*. Once present the
+respective gate activates automatically (OWASP is then a hard CVSS≥7
+gate; OWASP Dependency Check remains the always-on gate the moment its
+key exists).
+
 ## How to read findings
 
 - **SARIF tools (CodeQL, Trivy)** → GitHub repo **Security → Code

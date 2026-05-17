@@ -25,7 +25,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * it deterministically; production defaults to KES 300,000. A fresh
  * context per test keeps the in-memory daily counters isolated.
  */
-@SpringBootTest(properties = "ussd.daily-transfer-limit=1000")
+@SpringBootTest(properties = {
+        "ussd.daily-transfer-limit=1000",
+        // Own in-memory DB: @DirtiesContext tears this context down after
+        // every method; create-drop must not wipe the schema other
+        // contexts share (in-mem H2 is JVM-global by name).
+        "spring.datasource.url=jdbc:h2:mem:daily-limit;DB_CLOSE_DELAY=-1"})
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class DailyTransferLimitIntegrationTest {

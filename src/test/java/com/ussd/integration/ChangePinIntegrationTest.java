@@ -20,7 +20,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * subsequent money operations require it. Fresh context per test so the
  * in-memory PIN/lockout state is isolated.
  */
-@SpringBootTest
+@SpringBootTest(properties =
+        // Own in-memory DB: @DirtiesContext tears this context down after
+        // every method; its create-drop must not wipe the schema shared
+        // by other contexts (in-mem H2 is JVM-global by name).
+        "spring.datasource.url=jdbc:h2:mem:changepin;DB_CLOSE_DELAY=-1")
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class ChangePinIntegrationTest {

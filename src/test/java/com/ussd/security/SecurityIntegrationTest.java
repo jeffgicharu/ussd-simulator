@@ -121,7 +121,13 @@ class SecurityIntegrationTest {
     }
 
     @Nested
-    @SpringBootTest(properties = "ussd.session-timeout-seconds=-1")
+    @SpringBootTest(properties = {
+            "ussd.session-timeout-seconds=-1",
+            // Distinct in-memory DB: this is a separate Spring context and
+            // its create-drop shutdown must not wipe the schema shared by
+            // the default-context tests (in-mem H2 is JVM-global by name).
+            "spring.datasource.url=jdbc:h2:mem:sec-expiry;DB_CLOSE_DELAY=-1"
+    })
     @AutoConfigureMockMvc
     class Expiry {
         @Autowired MockMvc mvc;

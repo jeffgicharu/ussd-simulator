@@ -30,7 +30,9 @@ class SessionLifecycleIntegrationTest {
     // ── Expiry: timeout = -1 forces every getSession() to treat the
     //    session as expired, so each request rebuilds a fresh session. ──
     @Nested
-    @SpringBootTest(properties = "ussd.session-timeout-seconds=-1")
+    @SpringBootTest(properties = {
+            "ussd.session-timeout-seconds=-1",
+            "spring.datasource.url=jdbc:h2:mem:sl-expiry;DB_CLOSE_DELAY=-1"})
     @AutoConfigureMockMvc
     class Expiry {
         @Autowired MockMvc mockMvc;
@@ -56,7 +58,9 @@ class SessionLifecycleIntegrationTest {
 
     // ── Max-session cap ──
     @Nested
-    @SpringBootTest(properties = "ussd.max-sessions=2")
+    @SpringBootTest(properties = {
+            "ussd.max-sessions=2",
+            "spring.datasource.url=jdbc:h2:mem:sl-cap;DB_CLOSE_DELAY=-1"})
     @AutoConfigureMockMvc
     class Cap {
         @Autowired MockMvc mockMvc;
