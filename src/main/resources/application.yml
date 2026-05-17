@@ -2,28 +2,28 @@ spring:
   application:
     name: ussd-simulator
   datasource:
-    url: jdbc:h2:mem:ussddb;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:ussddb;DB_CLOSE_DELAY=-1}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: false
+      ddl-auto: ${SPRING_JPA_DDL_AUTO:create-drop}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:true}
       path: /h2-console
 
 server:
-  port: 8181
+  port: ${SERVER_PORT:8181}
 
 ussd:
-  service-code: "*384#"
-  session-timeout-seconds: 180
-  max-sessions: 10000
+  service-code: ${USSD_SERVICE_CODE:*384#}
+  session-timeout-seconds: ${USSD_SESSION_TIMEOUT_SECONDS:180}
+  max-sessions: ${USSD_MAX_SESSIONS:10000}
 
   # Wallet API integration (optional)
   wallet-api:
-    base-url: http://localhost:8080
-    enabled: false
+    base-url: ${USSD_WALLET_API_BASE_URL:http://localhost:8080}
+    enabled: ${USSD_WALLET_API_ENABLED:false}

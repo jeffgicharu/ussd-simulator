@@ -1,0 +1,14 @@
+# Production profile — activated with SPRING_PROFILES_ACTIVE=prod
+# Hardens the public deployment: the H2 web console and SQL logging are
+# never exposed, regardless of the base defaults.
+spring:
+  h2:
+    console:
+      enabled: false
+  jpa:
+    show-sql: false
+
+server:
+  error:
+    include-message: never
+    include-stacktrace: never
