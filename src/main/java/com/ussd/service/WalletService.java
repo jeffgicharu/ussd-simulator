@@ -305,7 +305,7 @@ public class WalletService {
 
     public boolean validatePin(String phone, String pin) {
         Long lockExpiry = lockedUntil.get(phone);
-        if (lockExpiry != null && System.currentTimeMillis() < lockExpiry) {
+        if (lockExpiry != null && clock.millis() < lockExpiry) {
             return false;
         }
 
@@ -318,7 +318,7 @@ public class WalletService {
 
         int attempts = failedAttempts.merge(phone, 1, Integer::sum);
         if (attempts >= MAX_PIN_ATTEMPTS) {
-            lockedUntil.put(phone, System.currentTimeMillis() + LOCKOUT_MS);
+            lockedUntil.put(phone, clock.millis() + LOCKOUT_MS);
             log.warn("Account locked for {}: {} failed PIN attempts", phone, attempts);
         }
         return false;
@@ -326,7 +326,7 @@ public class WalletService {
 
     public boolean isLocked(String phone) {
         Long lockExpiry = lockedUntil.get(phone);
-        return lockExpiry != null && System.currentTimeMillis() < lockExpiry;
+        return lockExpiry != null && clock.millis() < lockExpiry;
     }
 
     public int getRemainingAttempts(String phone) {

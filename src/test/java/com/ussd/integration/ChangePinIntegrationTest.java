@@ -69,6 +69,19 @@ class ChangePinIntegrationTest {
     }
 
     @Test
+    @DisplayName("Non-4-digit current PIN is re-prompted before any verification")
+    void malformedCurrentPin_rePrompted() throws Exception {
+        String phone = "+254700000001";
+        step("cp-mal", phone, "");
+        step("cp-mal", phone, "6");
+        step("cp-mal", phone, "2");
+        mockMvc.perform(post("/ussd/api").contentType(MediaType.APPLICATION_JSON)
+                .content(json("cp-mal", phone, "12ab")))
+                .andExpect(jsonPath("$.continueSession").value(true))
+                .andExpect(jsonPath("$.message").value(containsString("Invalid PIN. Enter 4-digit PIN")));
+    }
+
+    @Test
     @DisplayName("Correct current PIN advances to new-PIN entry")
     void correctCurrentPin_advancesToNewPin() throws Exception {
         String phone = "+254700000001"; // PIN 1234
