@@ -36,6 +36,7 @@ jobs:
 
       - name: Smoke (SLO-gated)
         run: |
+          mkdir -p performance/results
           locust -f performance/locust/locustfile_smoke.py --headless \
             -u 1 -r 1 -t 30s --host http://localhost:8082 \
             --html performance/results/smoke.html
@@ -77,6 +78,9 @@ jobs:
             sleep 3
           done
           performance/seed-perf-data.sh http://localhost:8082
+
+      - name: Prepare results dir
+        run: mkdir -p performance/results
 
       - name: Load
         run: locust -f performance/locust/locustfile_load.py --headless -u 100 -r 2 -t 6m --host http://localhost:8082 --html performance/results/load.html
