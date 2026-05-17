@@ -26,8 +26,12 @@ jobs:
       # Install the Trivy CLI directly — avoids the composite action's
       # fragile transitive setup-trivy pin.
       - name: Install Trivy
+        env:
+          TRIVY_VERSION: "0.58.1"
         run: |
-          curl -sfL https://get.trivy.dev/install | sh -s -- -b /usr/local/bin
+          curl -sfL -o /tmp/trivy.tar.gz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          sudo tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
           trivy --version
 
       # --- Filesystem scan: secrets, IaC/misconfig, vulnerable deps ---
