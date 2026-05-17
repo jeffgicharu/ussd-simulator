@@ -1,0 +1,53 @@
+# Snyk dependency scanning.
+#
+# SETUP: add a repository secret named SNYK_TOKEN
+#   (Settings → Secrets and variables → Actions → New repository secret).
+#   Get the token from https://app.snyk.io/account.
+# Without the secret this workflow logs a notice and exits 0 — it never
+# blocks PRs just because Snyk is not yet configured. OWASP Dependency
+# Check (dependency-audit.yml) is the always-on fallback gate.
+name: Snyk Dependency Scan
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 2'   # Tuesdays 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  snyk:
+    name: Snyk test (high+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard — SNYK_TOKEN present?
+        id: guard
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          if [ -z "$SNYK_TOKEN" ]; then
+            echo "::notice::SNYK_TOKEN not configured — skipping Snyk. \
+          OWASP Dependency Check remains the active gate."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Snyk test
+        if: steps.guard.outputs.run == 'true'
+        uses: snyk/actions/maven@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high

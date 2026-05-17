@@ -1,0 +1,75 @@
+# OWASP Dependency Check — the dependency CVE gate. Fails the build on a
+# CVSS >= 7 (HIGH/CRITICAL) vulnerable dependency. No `|| true`: when it
+# runs it is a hard gate.
+#
+# SETUP (required): the NVD now rejects keyless bulk pulls (HTTP 403), so
+# Dependency Check cannot fetch its data without a key. Add a repository
+# secret named NVD_API_KEY (free, from https://nvd.nist.gov/developers/request-an-api-key).
+# Until the secret exists this workflow logs a notice and skips — it never
+# reports a false "pass" and never blocks PRs on missing infrastructure;
+# the gate activates automatically once the key is configured.
+name: Dependency Audit (OWASP)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 3'   # Wednesdays 03:00 UTC
+
+jobs:
+  owasp:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard — NVD_API_KEY present?
+        id: guard
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: |
+          if [ -z "$NVD_API_KEY" ]; then
+            echo "::notice::NVD_API_KEY not configured — skipping OWASP \
+          Dependency Check. The NVD blocks keyless pulls; add the secret \
+          to activate this hard CVSS>=7 gate."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache OWASP NVD data
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: owasp-nvd-${{ github.run_id }}
+          restore-keys: owasp-nvd-
+
+      - name: OWASP Dependency Check (fail on CVSS >= 7)
+        if: steps.guard.outputs.run == 'true'
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: >
+          mvn -B org.owasp:dependency-check-maven:9.2.0:check
+          -DfailBuildOnCVSS=7
+          -DassemblyAnalyzerEnabled=false
+          -DnvdApiKey=$NVD_API_KEY
+
+      - name: Upload report
+        if: always() && steps.guard.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: target/dependency-check-report.*
+          if-no-files-found: warn

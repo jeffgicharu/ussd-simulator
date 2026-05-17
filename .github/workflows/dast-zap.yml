@@ -1,0 +1,85 @@
+# OWASP ZAP DAST against the LIVE demo.
+#
+# SAFETY GUARD (protects the shared, memory-constrained live VPS):
+#   * The weekly SCHEDULE only ever runs the PASSIVE baseline scan.
+#   * The ACTIVE scan (attack payloads) runs ONLY from a manual
+#     workflow_dispatch with scan_type=api. The active job's `if:` is
+#     hard-pinned to event_name == 'workflow_dispatch' AND
+#     inputs.scan_type == 'api', so the scheduled trigger can never start
+#     it even if the input default were tampered with.
+#   * ZAP is rate-limited to 5 req/s (-d 5) so it cannot overwhelm the box.
+name: DAST (OWASP ZAP)
+
+on:
+  schedule:
+    - cron: '30 4 * * 0'   # Sundays 04:30 UTC — baseline only
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'baseline (passive) or api (ACTIVE — manual only)'
+        type: choice
+        default: baseline
+        options: [baseline, api]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  baseline:
+    name: ZAP Baseline (passive)
+    # Runs on the schedule, and on a manual dispatch when baseline chosen.
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' &&
+       inputs.scan_type == 'baseline')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: ZAP baseline scan (rate-limited, passive)
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: https://ussd.jeffgicharu.com
+          cmd_options: '-d 5'
+          allow_issue_writing: true
+          issue_title: 'DAST: ZAP baseline findings (ussd.jeffgicharu.com)'
+          fail_action: false
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: |
+            report_html.html
+            report_json.json
+            report_md.md
+          if-no-files-found: warn
+
+  active:
+    name: ZAP Active (manual only)
+    # HARD GUARD: never runs on a schedule. Manual dispatch + api only.
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      inputs.scan_type == 'api'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: ZAP full/active scan (rate-limited)
+        uses: zaproxy/action-full-scan@v0.12.0
+        with:
+          target: https://ussd.jeffgicharu.com
+          cmd_options: '-d 5'
+          allow_issue_writing: true
+          issue_title: 'DAST: ZAP ACTIVE scan findings (ussd.jeffgicharu.com)'
+          fail_action: false
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-active-report
+          path: |
+            report_html.html
+            report_json.json
+          if-no-files-found: warn

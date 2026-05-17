@@ -1,0 +1,73 @@
+name: Container & Filesystem Scan
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * *'   # daily 03:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy:
+    name: Trivy (image + fs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build -t ussd-simulator:scan .
+
+      # Install the Trivy CLI directly — avoids the composite action's
+      # fragile transitive setup-trivy pin.
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: "0.70.0"
+        run: |
+          curl -sfL -o /tmp/trivy.tar.gz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          sudo tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy
+          trivy --version
+
+      # --- Filesystem scan: secrets, IaC/misconfig, vulnerable deps ---
+      - name: Trivy filesystem scan (SARIF)
+        run: |
+          trivy fs --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL --format sarif \
+            --output trivy-fs.sarif .
+
+      - name: Upload fs SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+      - name: Trivy filesystem scan (gate)
+        run: |
+          trivy fs --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 .
+
+      # --- Image scan: OS + library CVEs in the runnable artifact ---
+      - name: Trivy image scan (SARIF)
+        run: |
+          trivy image --severity HIGH,CRITICAL --format sarif \
+            --output trivy-image.sarif ussd-simulator:scan
+
+      - name: Upload image SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif
+          category: trivy-image
+
+      - name: Trivy image scan (gate)
+        run: |
+          trivy image --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 ussd-simulator:scan

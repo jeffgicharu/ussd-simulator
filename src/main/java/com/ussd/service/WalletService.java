@@ -278,7 +278,6 @@ public class WalletService {
         }
 
         BigDecimal amount = new BigDecimal(amountStr);
-        BigDecimal before = getBalance(phone);
         balances.compute(phone, (k, v) -> v.add(amount));
         BigDecimal after = getBalance(phone);
 
@@ -319,7 +318,8 @@ public class WalletService {
         int attempts = failedAttempts.merge(phone, 1, Integer::sum);
         if (attempts >= MAX_PIN_ATTEMPTS) {
             lockedUntil.put(phone, clock.millis() + LOCKOUT_MS);
-            log.warn("Account locked for {}: {} failed PIN attempts", phone, attempts);
+            log.warn("Account locked for {}: {} failed PIN attempts",
+                    com.ussd.util.LogSanitizer.clean(phone), attempts);
         }
         return false;
     }
