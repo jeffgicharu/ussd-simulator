@@ -1,5 +1,6 @@
 package com.ussd.controller;
 
+import com.ussd.engine.SessionLimitExceededException;
 import com.ussd.engine.UssdEngine;
 import com.ussd.model.UssdResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,10 @@ public class UssdController {
 
     private final UssdEngine engine;
 
+    /** Shown when the concurrent-session cap is reached (see issue #7). */
+    private static final UssdResponse SERVICE_BUSY = UssdResponse.end(
+            "Service is temporarily unavailable. Please try again later.");
+
     /**
      * Africa's Talking compatible endpoint.
      * Accepts form-encoded POST and returns plain text.
@@ -40,7 +45,13 @@ public class UssdController {
         log.info("USSD request — session: {}, phone: {}, code: {}, text: '{}'",
                 sessionId, phoneNumber, serviceCode, text);
 
-        UssdResponse response = engine.process(sessionId, phoneNumber, serviceCode, text);
+        UssdResponse response;
+        try {
+            response = engine.process(sessionId, phoneNumber, serviceCode, text);
+        } catch (SessionLimitExceededException e) {
+            log.warn("Session cap reached — returning graceful END for session {}", sessionId);
+            response = SERVICE_BUSY;
+        }
 
         log.info("USSD response — session: {}, continue: {}, message: '{}'",
                 sessionId, response.isContinueSession(),
@@ -66,7 +77,13 @@ public class UssdController {
         log.info("USSD JSON — session: {}, phone: {}, input: '{}'",
                 sessionId, phoneNumber, input);
 
-        UssdResponse response = engine.processStep(sessionId, phoneNumber, serviceCode, input);
+        UssdResponse response;
+        try {
+            response = engine.processStep(sessionId, phoneNumber, serviceCode, input);
+        } catch (SessionLimitExceededException e) {
+            log.warn("Session cap reached — returning graceful END for session {}", sessionId);
+            response = SERVICE_BUSY;
+        }
 
         return Map.of(
                 "message", response.getMessage(),

@@ -35,7 +35,7 @@ public class SessionManager {
         if (sessions.size() >= maxSessions) {
             cleanExpiredSessions();
             if (sessions.size() >= maxSessions) {
-                throw new IllegalStateException("Maximum concurrent sessions reached");
+                throw new SessionLimitExceededException("Maximum concurrent sessions reached");
             }
         }
 

@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -60,22 +61,35 @@ class SessionLifecycleIntegrationTest {
     class Cap {
         @Autowired MockMvc mockMvc;
 
+        /**
+         * Inverted as part of closing issue #7: this previously
+         * characterised the unhandled {@code IllegalStateException}; the
+         * controller now converts a session-cap breach into a graceful
+         * USSD {@code END} response.
+         */
         @Test
-        @DisplayName("Exceeding the session cap throws (current behaviour) but the app survives")
-        void overCap_throwsButAppSurvives() throws Exception {
+        @DisplayName("Exceeding the session cap returns a graceful END, app survives")
+        void overCap_returnsGracefulEnd() throws Exception {
             String phone = "+254700000001";
             mockMvc.perform(post("/ussd/api").contentType(MediaType.APPLICATION_JSON)
                     .content(json("cap-1", phone, ""))).andExpect(status().isOk());
             mockMvc.perform(post("/ussd/api").contentType(MediaType.APPLICATION_JSON)
                     .content(json("cap-2", phone, ""))).andExpect(status().isOk());
-            // The third distinct session is over the cap of 2. Current
-            // behaviour is an UNHANDLED IllegalStateException (no
-            // user-facing USSD message) — documented, see issue tracker.
-            org.assertj.core.api.Assertions.assertThatThrownBy(() ->
-                    mockMvc.perform(post("/ussd/api").contentType(MediaType.APPLICATION_JSON)
-                            .content(json("cap-3", phone, ""))))
-                    .hasRootCauseInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Maximum concurrent sessions reached");
+            // The third distinct session is over the cap of 2 — it now
+            // gets a well-formed terminal USSD message, not a 5xx error.
+            mockMvc.perform(post("/ussd/api").contentType(MediaType.APPLICATION_JSON)
+                    .content(json("cap-3", phone, "")))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.continueSession").value(false))
+                    .andExpect(jsonPath("$.message")
+                            .value(containsString("temporarily unavailable")));
+            // The form-encoded callback gets the same graceful END.
+            mockMvc.perform(post("/ussd/callback")
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .param("sessionId", "cap-4").param("phoneNumber", phone)
+                    .param("text", ""))
+                    .andExpect(status().isOk())
+                    .andExpect(content().string(startsWith("END ")));
             // The app survives: an already-established session still works.
             mockMvc.perform(post("/ussd/api").contentType(MediaType.APPLICATION_JSON)
                     .content(json("cap-1", phone, "4")))
