@@ -6,9 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +33,26 @@ public class WalletService {
     private final Map<String, BigDecimal> balances = new ConcurrentHashMap<>();
     private final Map<String, String> pins = new ConcurrentHashMap<>();
     private final Map<String, List<String>> transactionHistory = new ConcurrentHashMap<>();
+
+    // Cumulative amount transferred per phone per UTC day, keyed
+    // "<phone>|<yyyy-MM-dd>". Old days are simply never read again.
+    private final Map<String, BigDecimal> dailyTransferred = new ConcurrentHashMap<>();
+
+    /** Per-phone cumulative daily send-money cap (real M-Pesa: KES 300,000/day). */
+    @Value("${ussd.daily-transfer-limit:300000}")
+    private BigDecimal dailyTransferLimit;
+
+    /** Overridable so the UTC day boundary can be exercised in tests. */
+    private Clock clock = Clock.systemUTC();
+
+    /** Inject a fixed/offset clock to exercise the UTC day boundary. */
+    public void setClock(Clock clock) {
+        this.clock = clock;
+    }
+
+    private String dailyKey(String phone) {
+        return phone + "|" + LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC);
+    }
 
     public WalletService() {
         // Seed demo accounts
@@ -53,6 +78,20 @@ public class WalletService {
         BigDecimal amount = new BigDecimal(amountStr);
         BigDecimal fee = new BigDecimal(feeStr);
         BigDecimal total = amount.add(fee);
+
+        // Cumulative daily transfer limit (fraud control). Checked after
+        // PIN validation but independent of balance — a control, not a
+        // funds check. The fee is excluded; the limit is on amount sent.
+        String dayKey = dailyKey(senderPhone);
+        BigDecimal sentToday = dailyTransferred.getOrDefault(dayKey, BigDecimal.ZERO);
+        if (sentToday.add(amount).compareTo(dailyTransferLimit) > 0) {
+            return String.format(
+                    "Transaction failed.\n" +
+                    "You have exceeded today's transfer limit. Limit resets at midnight.\n" +
+                    "Daily limit: KES %s",
+                    dailyTransferLimit.toPlainString());
+        }
+
         BigDecimal senderBalance = getBalance(senderPhone);
 
         if (senderBalance.compareTo(total) < 0) {
@@ -82,6 +121,9 @@ public class WalletService {
 
         BigDecimal newBalance = getBalance(senderPhone);
         logTransaction(senderPhone, "SEND_MONEY", amount, fee, recipientPhone, "SUCCESS", newBalance);
+
+        // Only successful transfers count toward the daily limit.
+        dailyTransferred.merge(dayKey, amount, BigDecimal::add);
 
         return String.format(
                 "%s confirmed.\n" +

@@ -9,7 +9,9 @@ But beyond the menu navigation, it also handles the things a production USSD sys
 ## What It Does
 
 **USSD menu flows:**
-- Send money with tiered M-Pesa-style fee calculation
+- Send money with tiered M-Pesa-style fee calculation and a cumulative
+  daily transfer limit (default KES 300,000 per phone per UTC day,
+  configurable via `ussd.daily-transfer-limit`; resets at midnight UTC)
 - Withdraw cash at agent
 - Deposit to wallet
 - Buy airtime (own phone or another number)
