@@ -45,6 +45,32 @@ USSD isn't like a normal API. Sessions are stateful, short-lived (180 seconds), 
 
 When an unregistered phone number dials in, the engine detects they're not in the system and redirects them to the registration flow instead of the main menu. Once registered, they see the full menu on their next dial.
 
+## Live Demo
+
+A running instance with the browser phone simulator is live at
+**https://ussd.jeffgicharu.com**.
+
+Open it, leave the phone number as `+254700000001` and the service code as
+`*384#`, press **Dial**, then walk the menus from the keypad:
+
+- `1` Send Money · `2` Withdraw · `3` Buy Airtime · `4` Check Balance ·
+  `5` Deposit · `6` My Account · `7` Loans & Savings
+- Most actions ask for the account PIN. For a quick taste, dial, press `4`
+  (Check Balance), then enter PIN `1234`.
+
+Demo accounts (each is pre-seeded and reset to this state daily):
+
+| Phone | PIN | Balance |
+|---|---|---|
+| +254700000001 | 1234 | KES 75,000 |
+| +254700000002 | 5678 | KES 12,500 |
+| +254700000003 | 4321 | KES 3,200 |
+
+Any other phone number is treated as unregistered and routed to the
+self-service registration flow — try it to create a new account with your
+own PIN. The instance resets to the table above every day at **03:30 UTC**,
+so feel free to move money around.
+
 ## Quick Start
 
 ```bash
