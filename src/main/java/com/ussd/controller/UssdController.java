@@ -3,6 +3,7 @@ package com.ussd.controller;
 import com.ussd.engine.SessionLimitExceededException;
 import com.ussd.engine.UssdEngine;
 import com.ussd.model.UssdResponse;
+import com.ussd.util.LogSanitizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -43,19 +44,20 @@ public class UssdController {
             @RequestParam(defaultValue = "") String text) {
 
         log.info("USSD request — session: {}, phone: {}, code: {}, text: '{}'",
-                sessionId, phoneNumber, serviceCode, text);
+                LogSanitizer.clean(sessionId), LogSanitizer.clean(phoneNumber),
+                LogSanitizer.clean(serviceCode), LogSanitizer.maskInput(text));
 
         UssdResponse response;
         try {
             response = engine.process(sessionId, phoneNumber, serviceCode, text);
         } catch (SessionLimitExceededException e) {
-            log.warn("Session cap reached — returning graceful END for session {}", sessionId);
+            log.warn("Session cap reached — returning graceful END for session {}",
+                    LogSanitizer.clean(sessionId));
             response = SERVICE_BUSY;
         }
 
-        log.info("USSD response — session: {}, continue: {}, message: '{}'",
-                sessionId, response.isContinueSession(),
-                response.getMessage().replace("\n", "\\n"));
+        log.info("USSD response — session: {}, continue: {}",
+                LogSanitizer.clean(sessionId), response.isContinueSession());
 
         return response.toAfricasTalking();
     }
@@ -75,13 +77,15 @@ public class UssdController {
         String input = request.getOrDefault("input", "");
 
         log.info("USSD JSON — session: {}, phone: {}, input: '{}'",
-                sessionId, phoneNumber, input);
+                LogSanitizer.clean(sessionId), LogSanitizer.clean(phoneNumber),
+                LogSanitizer.maskInput(input));
 
         UssdResponse response;
         try {
             response = engine.processStep(sessionId, phoneNumber, serviceCode, input);
         } catch (SessionLimitExceededException e) {
-            log.warn("Session cap reached — returning graceful END for session {}", sessionId);
+            log.warn("Session cap reached — returning graceful END for session {}",
+                    LogSanitizer.clean(sessionId));
             response = SERVICE_BUSY;
         }
 

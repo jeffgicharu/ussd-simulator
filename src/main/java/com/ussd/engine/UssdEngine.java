@@ -4,6 +4,7 @@ import com.ussd.model.UssdResponse;
 import com.ussd.model.UssdSession;
 import com.ussd.screen.UssdScreen;
 import com.ussd.service.WalletService;
+import com.ussd.util.LogSanitizer;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,10 @@ public class UssdEngine {
 
         UssdSession session = sessionManager.getSession(sessionId);
 
+        if (isHijackAttempt(session, phoneNumber, sessionId)) {
+            return UssdResponse.end(SESSION_ERROR);
+        }
+
         if (session == null) {
             session = sessionManager.createSession(sessionId, phoneNumber, serviceCode);
 
@@ -93,6 +98,10 @@ public class UssdEngine {
     public UssdResponse processStep(String sessionId, String phoneNumber,
                                     String serviceCode, String input) {
         UssdSession session = sessionManager.getSession(sessionId);
+
+        if (isHijackAttempt(session, phoneNumber, sessionId)) {
+            return UssdResponse.end(SESSION_ERROR);
+        }
 
         if (session == null) {
             session = sessionManager.createSession(sessionId, phoneNumber, serviceCode);
@@ -134,6 +143,30 @@ public class UssdEngine {
         }
 
         return response;
+    }
+
+    private static final String SESSION_ERROR =
+            "Session error. Please dial again.";
+
+    /**
+     * A session is owned by the phone number it was created for. If a
+     * request arrives carrying an existing sessionId but a different
+     * phone number, that is a session-hijacking / fixation attempt: the
+     * engine otherwise operates the wallet using the *session's* phone,
+     * so a caller could drive a victim's session. Reject it without
+     * touching the victim's session (no continuation, no eviction).
+     */
+    private boolean isHijackAttempt(UssdSession session, String phoneNumber,
+                                    String sessionId) {
+        if (session == null || phoneNumber == null) {
+            return false;
+        }
+        if (!session.getPhoneNumber().equals(phoneNumber)) {
+            log.warn("Rejected session/phone mismatch — session {} owned by "
+                            + "another caller", LogSanitizer.clean(sessionId));
+            return true;
+        }
+        return false;
     }
 
     private UssdScreen getScreen(String screenId) {

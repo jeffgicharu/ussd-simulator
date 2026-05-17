@@ -3,6 +3,7 @@ package com.ussd.engine;
 import com.ussd.entity.SessionLog;
 import com.ussd.model.UssdSession;
 import com.ussd.repository.SessionLogRepository;
+import com.ussd.util.LogSanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,7 +42,8 @@ public class SessionManager {
 
         UssdSession session = new UssdSession(sessionId, phoneNumber, serviceCode);
         sessions.put(sessionId, session);
-        log.info("Session created: {} for {}", sessionId, phoneNumber);
+        log.info("Session created: {} for {}",
+                LogSanitizer.clean(sessionId), LogSanitizer.clean(phoneNumber));
         return session;
     }
 
@@ -54,7 +56,7 @@ public class SessionManager {
 
         if (!session.isActive() || isExpired(session)) {
             sessions.remove(sessionId);
-            log.info("Session expired: {}", sessionId);
+            log.info("Session expired: {}", LogSanitizer.clean(sessionId));
             return null;
         }
 
@@ -67,7 +69,7 @@ public class SessionManager {
         if (session != null) {
             session.end();
             persistSessionLog(session, "COMPLETED");
-            log.info("Session ended: {}", sessionId);
+            log.info("Session ended: {}", LogSanitizer.clean(sessionId));
         }
     }
 

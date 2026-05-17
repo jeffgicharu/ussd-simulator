@@ -1,0 +1,51 @@
+# OWASP Dependency Check — the always-on dependency gate (works without
+# any external account, unlike Snyk). Fails the build on a CVSS >= 7
+# (HIGH/CRITICAL) vulnerable dependency. No `|| true`: it must fail.
+name: Dependency Audit (OWASP)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 3'   # Wednesdays 03:00 UTC
+
+jobs:
+  owasp:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache OWASP NVD data
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/owasp/dependency-check-data
+          key: owasp-nvd-${{ github.run_id }}
+          restore-keys: owasp-nvd-
+
+      - name: OWASP Dependency Check (fail on CVSS >= 7)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: >
+          mvn -B org.owasp:dependency-check-maven:9.2.0:check
+          -DfailBuildOnCVSS=7
+          -DassemblyAnalyzerEnabled=false
+          ${NVD_API_KEY:+-DnvdApiKey=$NVD_API_KEY}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-check-report
+          path: target/dependency-check-report.*
+          if-no-files-found: warn

@@ -1,0 +1,2 @@
+com/ussd/util/LogSanitizer.clean(Ljava/lang/String;)Ljava/lang/String;:SAFE
+com/ussd/util/LogSanitizer.maskInput(Ljava/lang/String;)Ljava/lang/String;:SAFE

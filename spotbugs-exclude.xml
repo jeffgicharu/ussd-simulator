@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Spotbugs / find-sec-bugs exclusion filter.
+  Every exclusion carries a justification. Security-category findings are
+  NEVER excluded here — they are fixed in code.
+-->
+<FindBugsFilter>
+
+    <!-- VA_FORMAT_STRING_USES_NEWLINE: the codebase uses literal "\n" in
+         String.format for every USSD screen. This is REQUIRED, not a
+         defect: the Africa's Talking / USSD wire format expects a literal
+         LF as the line separator. "%n" emits the platform line separator
+         (CRLF on some hosts), which would corrupt USSD rendering. The
+         literal "\n" is the correct, deliberate choice. -->
+    <Match>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
+    <!-- EI_EXPOSE_REP / EI_EXPOSE_REP2: Lombok-generated accessors on the
+         in-memory session model and Spring-injected final collaborator
+         fields in @Component screens/engine. These are framework
+         dependency-injection wiring and single-process simulator data
+         holders, not a trust boundary — there is no second security
+         domain to defend a copy against, and defensive copying would
+         break Spring constructor injection. Scoped to the model, screen
+         and engine packages only. -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+        <Or>
+            <Class name="~com\.ussd\.model\..*"/>
+            <Class name="~com\.ussd\.screen\..*"/>
+            <Class name="~com\.ussd\.engine\..*"/>
+        </Or>
+    </Match>
+
+</FindBugsFilter>
