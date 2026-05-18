@@ -120,3 +120,6 @@ than per-PR, to keep the PR loop fast and deterministic.
 | 19 | Locust | Performance | Stateful concurrent-session load model |
 | 20 | k6 | Performance | Alternative scripted load with session state |
 | 21 | GitHub Actions | CI | Orchestrates all gates above |
+
+---
+*See also: [QUALITY_DASHBOARD](QUALITY_DASHBOARD.md) · [AUDIT](AUDIT.md) · [TEST_STRATEGY](TEST_STRATEGY.md) · [TEST_PLAN](TEST_PLAN.md) · [QA_BEST_PRACTICES](QA_BEST_PRACTICES.md) · [MUTATION_TESTING](MUTATION_TESTING.md) · [PERFORMANCE_TESTING](PERFORMANCE_TESTING.md) · [SECURITY_TESTING](SECURITY_TESTING.md) · [E2E_VERIFICATION](E2E_VERIFICATION.md) · [AI_TESTING_PLAYBOOK](AI_TESTING_PLAYBOOK.md)*

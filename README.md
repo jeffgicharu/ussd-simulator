@@ -152,12 +152,37 @@ Spring Boot 3.2, Java 17, Spring Data JPA, H2 (in-memory database for session an
 ## Tests
 
 ```bash
-mvn test   # 23 tests
+mvn clean verify -B          # unit + integration + security + Spotbugs + JaCoCo
+npm run test:e2e:local       # Playwright browser E2E (needs the local target up)
 ```
 
-**Unit tests (12):** main menu rendering, send money flow, phone validation, balance with correct/wrong PIN, airtime, account info, invalid input, AT CON/END formatting, shortcode chain.
+## Quality Engineering
 
-**Integration tests (11):** AT callback format, AT balance check, JSON API main menu, deposit flow through HTTP, unregistered user redirect, registration flow, metrics endpoint, session analytics, transaction analytics, customer history, wrong PIN through HTTP.
+![CI](https://github.com/jeffgicharu/ussd-simulator/actions/workflows/ci.yml/badge.svg)
+![CodeQL](https://github.com/jeffgicharu/ussd-simulator/actions/workflows/codeql.yml/badge.svg)
+![JaCoCo floor](https://img.shields.io/badge/JaCoCo-line%E2%89%A561%25%20%C2%B7%20target%2080%25-informational)
+![PIT mutation](https://img.shields.io/badge/PIT-score%E2%89%A549%25%20%C2%B7%20test--strength%20~81%25-informational)
+
+This is a deliberately gap-closing project: layered testing was built up
+over time (integration → mutation → performance → security → E2E), real
+bugs were found **and fixed inline** (session hijacking, log injection,
+17 dependency CVEs, daily-limit/change-PIN gaps, accessibility), and the
+remaining backlog is small, low/medium severity, and **openly tracked**
+rather than hidden. The single source of truth is the
+**[Quality Dashboard](QUALITY_DASHBOARD.md)**.
+
+| Area | Doc |
+|---|---|
+| Baseline & gaps | [AUDIT.md](AUDIT.md) |
+| Strategy / pyramid / targets | [TEST_STRATEGY.md](TEST_STRATEGY.md) |
+| Highest-value workflow plan | [TEST_PLAN.md](TEST_PLAN.md) |
+| Review & test conventions | [QA_BEST_PRACTICES.md](QA_BEST_PRACTICES.md) |
+| Mutation testing (PIT) | [MUTATION_TESTING.md](MUTATION_TESTING.md) |
+| Performance (Locust) | [PERFORMANCE_TESTING.md](PERFORMANCE_TESTING.md) |
+| Security (SAST/DAST/deps) | [SECURITY_TESTING.md](SECURITY_TESTING.md) |
+| Browser + webhook E2E | [E2E_VERIFICATION.md](E2E_VERIFICATION.md) |
+| AI-assisted testing | [AI_TESTING_PLAYBOOK.md](AI_TESTING_PLAYBOOK.md) |
+| Live metric snapshot | [QUALITY_DASHBOARD.md](QUALITY_DASHBOARD.md) |
 
 ## License
 
