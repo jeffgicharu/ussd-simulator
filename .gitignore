@@ -24,3 +24,6 @@ playwright-report/
 test-results/
 /e2e/.auth/
 scripts/verify-endpoints-result.md
+
+# Local Claude Code harness state (never commit)
+.claude/
