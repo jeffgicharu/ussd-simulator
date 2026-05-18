@@ -113,4 +113,41 @@ test.describe('UI polish', () => {
       expect(r).not.toContain(':0px');
     }
   });
+
+  // The input row is a flex container; a flex item keeps its intrinsic
+  // width unless min-width:0 is set, which previously pushed the Send
+  // button ~20px outside the phone body at every desktop width.
+  test('no control overflows the phone body across viewport widths', async ({
+    page,
+  }) => {
+    for (const width of [1670, 1440, 1280, 1100, 1081, 1080, 900, 768, 375]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/');
+      const box = await page.evaluate(() => {
+        const r = (s: string) =>
+          document.querySelector(s)!.getBoundingClientRect();
+        const phone = r('.phone');
+        const send = r('.phone-input-area button');
+        const input = r('.phone-input-area input');
+        const actions = r('.phone-actions');
+        return {
+          // px the control extends past the phone's right/left edge
+          sendRight: Math.round(send.right - phone.right),
+          sendLeft: Math.round(phone.left - send.left),
+          inputLeft: Math.round(phone.left - input.left),
+          actionsRight: Math.round(actions.right - phone.right),
+        };
+      });
+      expect(
+        box.sendRight,
+        `Send button overflows phone body at ${width}px (${box.sendRight}px past edge)`,
+      ).toBeLessThanOrEqual(0);
+      expect(
+        box.actionsRight,
+        `action row overflows phone body at ${width}px`,
+      ).toBeLessThanOrEqual(0);
+      expect(box.sendLeft, `Send button overflows left at ${width}px`).toBeLessThanOrEqual(0);
+      expect(box.inputLeft, `input overflows left at ${width}px`).toBeLessThanOrEqual(0);
+    }
+  });
 });
