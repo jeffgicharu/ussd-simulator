@@ -85,6 +85,10 @@
 
         .phone-input-area input {
             flex: 1;
+            /* Without this a flex item keeps its intrinsic text-input
+               width (min-width:auto), so the input refuses to shrink and
+               pushes the Send button ~20px outside the phone body. */
+            min-width: 0;
             background: #444;
             border: 2px solid #555;
             border-radius: 8px;
