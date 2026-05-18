@@ -1,0 +1,16 @@
+{
+  "name": "ussd-simulator-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser E2E (Playwright) + endpoint verification harness for ussd-simulator. Dev tooling only — the application itself is the Spring Boot project; this is not a Node app.",
+  "scripts": {
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
+    "test:e2e:local": "playwright test --config e2e/playwright.config.ts --project=local-chromium --project=local-firefox --project=local-webkit",
+    "test:e2e:live": "playwright test --config e2e/playwright.config.ts --project=live-chromium --project=live-firefox --project=live-webkit",
+    "test:e2e:ui": "playwright test --config e2e/playwright.config.ts --ui"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@playwright/test": "^1.60.0"
+  }
+}

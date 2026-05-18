@@ -1,0 +1,42 @@
+name: E2E Live Smoke
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * *'   # 06:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  e2e-live-smoke:
+    name: Playwright live-smoke + curl (gentle)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps + browsers
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium firefox webkit
+
+      - name: Playwright live-smoke (1 worker, gentle)
+        run: npm run test:e2e:live -- --workers=1
+
+      - name: curl webhook verification (live, read-only)
+        if: always()
+        run: bash scripts/verify-endpoints-live.sh https://ussd.jeffgicharu.com
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-live-smoke
+          path: |
+            playwright-report/
+            scripts/verify-endpoints-result.md
+          if-no-files-found: warn

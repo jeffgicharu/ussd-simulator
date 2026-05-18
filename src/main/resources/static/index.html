@@ -56,7 +56,7 @@
 
         .phone-screen .status-bar {
             font-size: 11px;
-            color: #00aa00;
+            color: #aaffaa;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
@@ -98,7 +98,7 @@
         }
 
         .phone-input-area button {
-            background: #4CAF50;
+            background: #2e7d32;
             border: none;
             border-radius: 8px;
             padding: 12px 20px;
@@ -108,7 +108,7 @@
             font-size: 14px;
         }
 
-        .phone-input-area button:hover { background: #45a049; }
+        .phone-input-area button:hover { background: #1b5e20; }
         .phone-input-area button:active { transform: scale(0.95); }
 
         .phone-actions {
@@ -127,12 +127,12 @@
         }
 
         .btn-dial {
-            background: #4CAF50;
+            background: #2e7d32;
             color: white;
         }
 
         .btn-end {
-            background: #f44336;
+            background: #c62828;
             color: white;
         }
 
@@ -253,10 +253,10 @@
         <div class="settings">
             <h3>Phone Settings</h3>
 
-            <label>Phone Number</label>
+            <label for="phoneNumber">Phone Number</label>
             <input type="text" id="phoneNumber" value="+254700000001" />
 
-            <label>Service Code</label>
+            <label for="serviceCode">Service Code</label>
             <input type="text" id="serviceCode" value="*384#" />
 
             <div class="session-info">
@@ -288,7 +288,7 @@
             </div>
             <div class="phone-input-area">
                 <input type="text" id="userInput" placeholder="Enter response..."
-                       autocomplete="off" />
+                       aria-label="USSD menu response" autocomplete="off" />
                 <button onclick="sendInput()">Send</button>
             </div>
             <div class="phone-actions">
