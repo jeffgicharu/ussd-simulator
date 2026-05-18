@@ -1,8 +1,9 @@
 # E2E target. Two production-like instances:
-#  - ussd-e2e     :8082  short session timeout (8s) so the
+#  - ussd-e2e     :8082  session timeout 30s — short enough that the
 #                         session-timeout spec is deterministic without a
-#                         181s wait. Automated steps are sub-second, so a
-#                         short global timeout is safe for every other spec.
+#                         181s wait, but generous enough that a slow
+#                         browser (webkit under CI parallelism) never
+#                         expires mid-flow on a legitimate multi-step spec.
 #  - ussd-e2e-cap :8083  tiny session cap (2) so the session-cap-graceful
 #                         spec can hit the boundary deterministically
 #                         without touching the main target or live demo.
@@ -15,7 +16,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SERVER_PORT: "8082"
-      USSD_SESSION_TIMEOUT_SECONDS: "8"
+      USSD_SESSION_TIMEOUT_SECONDS: "30"
       JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m -XX:+UseSerialGC"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/api/metrics"]
