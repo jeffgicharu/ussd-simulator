@@ -3,6 +3,29 @@
 Browser (Playwright) + webhook (curl) verification at two layers:
 comprehensive **local** and gentle **live-smoke**.
 
+## Re-verified after redeploy on 2026-05-18
+
+The live demo was redeployed with merged `main` (Spring Boot 3.5.14,
+PRs #9/#10/#11/#18), closing the deployment-lag divergence (issue #19).
+Verified against `https://ussd.jeffgicharu.com` post-redeploy:
+
+| Fixed behaviour | Check | Result |
+|---|---|---|
+| Session hijack (#18) | A's sessionId reused by B | `END Session error` — **fixed live** |
+| Daily transfer limit (PR #9) | deposit 300k, send 290k then 20k | 2nd `exceeded today's transfer limit` — **fixed live** |
+| Change-PIN (PR #10) | change PIN; old vs new | old `Wrong PIN`, new authorises — **fixed live** |
+| Graceful session-cap (PR #11) | `SessionLimitExceededException` in deployed jar + `UssdController` references it | typed handler **deployed** |
+| Log sanitisation (#18) | CRLF + digit-run in input → server log | `input: 'ZZINJ*** ***_FAKELINE-...'` (digits masked, CRLF stripped) — **fixed live** |
+| Spring Boot 3.5.14 (CVE bump) | boot banner + deployed jar lib | `(v3.5.14)`, `spring-boot-3.5.14.jar` — **live** |
+
+Post-redeploy re-run: **live-smoke 12 passed / 0 skipped / 0 failed**
+(the cross-user probe now *actively asserts* the secure behaviour — no
+longer skip-with-reason). **curl-live 5/5 flows green.** Memory after
+redeploy: free 96→111 Mi, available 485→511 Mi, new JVM RSS 236 MB
+(Spring Boot 3.5.14, `-Xmx192m`) — no pressure increase, no JVM tuning
+needed. Backup `ussd-simulator.jar.pre-redeploy-20260518-052016`
+retained on the VPS for rollback.
+
 ## Tested against
 
 | Target | URL | Notes |
