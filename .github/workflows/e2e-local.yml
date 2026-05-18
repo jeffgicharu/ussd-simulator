@@ -1,0 +1,48 @@
+name: E2E Local
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e-local:
+    name: Playwright local (chromium + firefox + webkit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bring up the e2e target
+        run: |
+          docker compose -f docker-compose.e2e.yml up -d --build
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8082/api/metrics >/dev/null 2>&1 \
+              && curl -fsS http://localhost:8083/api/metrics >/dev/null 2>&1 && break
+            sleep 3
+          done
+          bash scripts/verify-endpoints-local.sh http://localhost:8082
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps + browsers
+        run: |
+          npm ci || npm install
+          npx playwright install --with-deps chromium firefox webkit
+
+      - name: Playwright local suite
+        run: npm run test:e2e:local
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-local
+          path: playwright-report/
+          if-no-files-found: warn
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v || true
