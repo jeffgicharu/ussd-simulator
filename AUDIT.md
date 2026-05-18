@@ -218,3 +218,6 @@ in happy-path engine routing; whole packages (`screen`, `service`,
   mutation score, scan findings, or test counts over time.
 - **CI hardening gaps** — no quality gates, no caching of test results, no
   matrix, no SARIF/security tab integration.
+
+---
+*See also: [QUALITY_DASHBOARD](QUALITY_DASHBOARD.md) · [AUDIT](AUDIT.md) · [TEST_STRATEGY](TEST_STRATEGY.md) · [TEST_PLAN](TEST_PLAN.md) · [QA_BEST_PRACTICES](QA_BEST_PRACTICES.md) · [MUTATION_TESTING](MUTATION_TESTING.md) · [PERFORMANCE_TESTING](PERFORMANCE_TESTING.md) · [SECURITY_TESTING](SECURITY_TESTING.md) · [E2E_VERIFICATION](E2E_VERIFICATION.md) · [AI_TESTING_PLAYBOOK](AI_TESTING_PLAYBOOK.md)*

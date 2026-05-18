@@ -158,3 +158,6 @@ curl -X POST http://localhost:8181/ussd/callback \
 New contributors: read `AUDIT.md` (where we are) and `TEST_STRATEGY.md`
 (where we're going) before adding tests, so new tests fit the pyramid
 instead of piling onto the happy path.
+
+---
+*See also: [QUALITY_DASHBOARD](QUALITY_DASHBOARD.md) · [AUDIT](AUDIT.md) · [TEST_STRATEGY](TEST_STRATEGY.md) · [TEST_PLAN](TEST_PLAN.md) · [QA_BEST_PRACTICES](QA_BEST_PRACTICES.md) · [MUTATION_TESTING](MUTATION_TESTING.md) · [PERFORMANCE_TESTING](PERFORMANCE_TESTING.md) · [SECURITY_TESTING](SECURITY_TESTING.md) · [E2E_VERIFICATION](E2E_VERIFICATION.md) · [AI_TESTING_PLAYBOOK](AI_TESTING_PLAYBOOK.md)*
